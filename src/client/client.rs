@@ -186,38 +186,42 @@ mod tests {
     use super::*;
     use crate::account::Account;
     use crate::util::random_nonce;
-
+    use std::{thread, time};
     #[tokio::test]
     async fn client_get_block_works() {
         let client = HttpRpcClient::default();
         let res = client.get_block(None).await.unwrap();
-        println!("{:?}", res);
+        assert_eq!(
+            "0xb6a4d7da21443f5e816e8700eea87610e6d769657d6b8ec73028457bf2ca4036",
+            res.header.chain_id.as_hex()
+        );
     }
 
     #[tokio::test]
     async fn client_get_block_hook_receipt() {
         let client = HttpRpcClient::default();
         let res = client.get_block_hook_receipt(1).await.unwrap();
-        println!("{:?}", res);
+        assert_eq!(1, res.height);
     }
 
     #[tokio::test]
     async fn client_query_service() {
         let client = HttpRpcClient::default();
+        let payload = r#"{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c", "user": "0xf8389d774afdad8755ef8e629e5a154fddc6325a"}"#;
         let res = client
             .query_service(
-                None,
-                None,
-                None,
-                muta_types::Address::from_hex("0x0000000000000000000000000000000000000000")
+                Some(1),
+                Some(1),
+                Some(1),
+                muta_types::Address::from_hex("0xf8389d774afdad8755ef8e629e5a154fddc6325a")
                     .unwrap(),
-                "metadata".to_string(),
-                "get_metadata".to_string(),
-                "".to_string(),
+                "asset".to_owned(),
+                "get_balance".to_owned(),
+                payload.to_owned(),
             )
             .await
             .unwrap();
-        println!("{:?}", res);
+        assert_eq!(0, res.code);
     }
 
     #[tokio::test]
@@ -232,13 +236,7 @@ mod tests {
         )
         .unwrap();
         let nonce = random_nonce();
-        let payload = r#"
-        {
-            "asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c",
-            "to": "0xa55e1261a73116c755291140e427caa0cbb5309e",
-            "value": 1,
-        }"#;
-
+        let payload = r#"{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c","to": "0xa55e1261a73116c755291140e427caa0cbb5309e","value": 1}"#;
         let block = client.get_block(None).await.unwrap();
         let latest_height = block.header.height;
         let raw = muta_types::RawTransaction {
@@ -246,11 +244,11 @@ mod tests {
             nonce,
             timeout: latest_height + 20,
             cycles_price: 1,
-            cycles_limit: 1,
+            cycles_limit: 1000000,
             request: muta_types::TransactionRequest {
                 service_name: "asset".to_owned(),
-                method:       "transfer".to_owned(),
-                payload:      payload.to_owned(),
+                method: "transfer".to_owned(),
+                payload: payload.to_owned(),
             },
         };
         let signed_transaction = account.sign_raw_tx(raw).unwrap();
@@ -258,9 +256,25 @@ mod tests {
         let tx_hash = client.send_transaction(signed_transaction).await.unwrap();
         println!("{:?}", tx_hash);
 
-        let transaction = client.get_transaction(tx_hash.clone()).await.unwrap();
-        println!("{:?}", transaction);
-        let receipt = client.get_receipt(tx_hash.clone()).await.unwrap();
-        println!("{:?}", receipt);
+        let duration = time::Duration::from_secs(1);
+        let mut i: u64 = 0;
+        while i < 10 {
+            thread::sleep(duration);
+            i += 1;
+
+            match client.get_transaction(tx_hash.clone()).await {
+                Ok(tx) => assert_eq!(tx_hash, tx.tx_hash),
+                Err(_e) => continue,
+            }
+            match client.get_receipt(tx_hash.clone()).await {
+                Ok(tx) => {
+                    assert_eq!(tx_hash, tx.tx_hash);
+                    assert_eq!(0, tx.response.response.code);
+                    break;
+                }
+                Err(_e) => continue,
+            }
+        }
+        assert_ne!(10, i);
     }
 }
