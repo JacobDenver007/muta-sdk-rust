@@ -14,12 +14,12 @@ muta-sdk = "0.1"
 ## Usage
 
 ```rust
-use muta-sdk;
+use muta_sdk;
 
-let wallet = muta-sdk::wallet::Wallet::generate("");
+let wallet = muta_sdk::wallet::Wallet::generate("");
 let private_key = wallet.derive_privatekey(0);
 
-let account = muta-sdk::account::Account::new(private_key);
+let account = muta_sdk::account::Account::new(private_key);
 let address = account.get_address();
 println!("address {}", address);
 ```
