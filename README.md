@@ -41,8 +41,6 @@ There are several mod you may interest on as follows.
 
 ## Development
 
-- rust >= 1.4
-
 > To ensure that the test passes, please enable a muta-example chain before the test
 
 ```shell

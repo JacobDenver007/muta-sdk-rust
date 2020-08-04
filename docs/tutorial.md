@@ -2,7 +2,7 @@
 
 ## A Quick Glance
 
-Muta is a high-performance blockchain framework, aiming to build a high-quality blockchain system. `muta-sdk`is an SDK(Software Development Kit) implemented by Rust, and used to interact with Muta instance. The runnable demo in this tutorial works well in [Rust](https://www.rust-lang.org/) >= 1.41 as it is written by Rust, and some structures that need to be explained will be described by Rust interface. It is highly recommended that editing the demo code in [VS Code](https://code.visualstudio.com/), since a modern IDE would be better to help you to auto-complete the code. 
+Muta is a high-performance blockchain framework, aiming to build a high-quality blockchain system. `muta-sdk`is an SDK(Software Development Kit) implemented by Rust, and used to interact with Muta instance. The runnable demo in this tutorial works well in [Rust](https://www.rust-lang.org/) as it is written by Rust, and some structures that need to be explained will be described by Rust interface. It is highly recommended that editing the demo code in [VS Code](https://code.visualstudio.com/), since a modern IDE would be better to help you to auto-complete the code. 
 
 ## Dependency
 
