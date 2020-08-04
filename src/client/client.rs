@@ -12,7 +12,7 @@ use super::request::{
 use super::rpc_types::{
     Block, BlockHookReceipt, Hash, Receipt, RpcError, ServiceResponse, SignedTransaction,
 };
-use crate::util::u64_to_hex;
+use crate::util::{random_nonce, u64_to_hex};
 
 pub struct Config {
     pub url: String,
@@ -151,6 +151,33 @@ impl HttpRpcClient {
         Ok(rpc_service.try_into()?)
     }
 
+    pub async fn generate_raw_transaction(
+        &self,
+        chain_id: String,
+        timeout_gap: Option<u64>,
+        cycles_limit: Option<u64>,
+        cycles_price: Option<u64>,
+        service_name: String,
+        method: String,
+        payload: String,
+    ) -> Result<muta_types::RawTransaction, RpcError> {
+        let block = self.get_block(None).await?;
+        let timeout = block.header.height + timeout_gap.unwrap_or(20);
+        let nonce = random_nonce();
+        Ok(muta_types::RawTransaction {
+            chain_id: muta_types::Hash::from_hex(chain_id.as_str())?,
+            nonce: nonce,
+            timeout: timeout,
+            cycles_price: cycles_price.unwrap_or(1),
+            cycles_limit: cycles_limit.unwrap_or(1000000),
+            request: muta_types::TransactionRequest {
+                service_name: service_name,
+                method: method,
+                payload: payload,
+            },
+        })
+    }
+
     pub async fn send_transaction(
         &self,
         tx: muta_types::SignedTransaction,
@@ -185,7 +212,6 @@ impl HttpRpcClient {
 mod tests {
     use super::*;
     use crate::account::Account;
-    use crate::util::random_nonce;
     use std::{thread, time};
     #[tokio::test]
     async fn client_get_block_works() {
@@ -231,26 +257,21 @@ mod tests {
             Account::from_hex("45c56be699dca666191ad3446897e0f480da234da896270202514a0e1a587c3f")
                 .unwrap();
 
-        let chain_id = muta_types::Hash::from_hex(
-            "0xb6a4d7da21443f5e816e8700eea87610e6d769657d6b8ec73028457bf2ca4036",
-        )
-        .unwrap();
-        let nonce = random_nonce();
         let payload = r#"{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c","to": "0xa55e1261a73116c755291140e427caa0cbb5309e","value": 1}"#;
-        let block = client.get_block(None).await.unwrap();
-        let latest_height = block.header.height;
-        let raw = muta_types::RawTransaction {
-            chain_id,
-            nonce,
-            timeout: latest_height + 20,
-            cycles_price: 1,
-            cycles_limit: 1000000,
-            request: muta_types::TransactionRequest {
-                service_name: "asset".to_owned(),
-                method: "transfer".to_owned(),
-                payload: payload.to_owned(),
-            },
-        };
+
+        let raw = client
+            .generate_raw_transaction(
+                "0xb6a4d7da21443f5e816e8700eea87610e6d769657d6b8ec73028457bf2ca4036".to_owned(),
+                None,
+                None,
+                None,
+                "asset".to_owned(),
+                "transfer".to_owned(),
+                payload.to_owned(),
+            )
+            .await
+            .unwrap();
+
         let signed_transaction = account.sign_raw_tx(raw).unwrap();
 
         let tx_hash = client.send_transaction(signed_transaction).await.unwrap();
