@@ -15,14 +15,13 @@ jobs:
             override: true
             components: rustfmt, clippy
 
-      # `cargo check` command here will use installed `nightly`
-      # as it is set as an "override" for current directory
-
-      - name: Run cargo check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
+      - name: Check
+        run: cargo check --verbose --all
       - name: Build
         run: cargo build --verbose
+      - name: Clippy
+        run: cargo clippy --verbose --all --all-targets --all-features -- -D warnings -D clippy::clone_on_ref_ptr -D clippy::enum_glob_use
+      - name: Fmt
+        run: cargo fmt --verbose --all -- --check
       - name: Test
         run: cargo test
