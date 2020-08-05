@@ -130,7 +130,7 @@ impl HttpRpcClient {
         height: Option<u64>,
         cycles_limit: Option<u64>,
         cycles_price: Option<u64>,
-        caller: muta_types::Address,
+        caller: Option<muta_types::Address>,
         service_name: String,
         method: String,
         payload: String,
@@ -141,7 +141,7 @@ impl HttpRpcClient {
                 "height": height.map(u64_to_hex),
                 "cyclesLimit": cycles_limit.map(u64_to_hex),
                 "cyclesPrice": cycles_price.map(u64_to_hex),
-                "caller": caller,
+                "caller": caller.unwrap_or(muta_types::Address::from_hex("0x0000000000000000000000000000000000000000")?),
                 "serviceName": service_name,
                 "method": method,
                 "payload": payload,
@@ -236,11 +236,10 @@ mod tests {
         let payload = r#"{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c", "user": "0xf8389d774afdad8755ef8e629e5a154fddc6325a"}"#;
         let res = client
             .query_service(
-                Some(1),
-                Some(1),
-                Some(1),
-                muta_types::Address::from_hex("0xf8389d774afdad8755ef8e629e5a154fddc6325a")
-                    .unwrap(),
+                None,
+                None,
+                None,
+                None,
                 "asset".to_owned(),
                 "get_balance".to_owned(),
                 payload.to_owned(),

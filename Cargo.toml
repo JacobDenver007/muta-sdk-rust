@@ -21,3 +21,7 @@ tiny-hderive = "0.2.1"
 
 [dev-dependencies]
 tokio = { version = "0.2", features = ["full"] }
+
+[[example]]
+name = "send-transaction"
+crate-type = ["bin"]
