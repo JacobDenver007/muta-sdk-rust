@@ -1,4 +1,3 @@
-use muta_sdk;
 use std::{thread, time};
 
 #[tokio::main]

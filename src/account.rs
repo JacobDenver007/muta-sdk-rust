@@ -21,8 +21,8 @@ pub enum AccountError {
 
 pub struct Account {
     private_key: Secp256k1PrivateKey,
-    public_key:  Secp256k1PublicKey,
-    address:     Address,
+    public_key: Secp256k1PublicKey,
+    address: Address,
 }
 
 impl Account {

@@ -124,7 +124,6 @@ impl HttpRpcClient {
         Ok(rpc_block_hook_receipt.try_into()?)
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub async fn query_service(
         &self,
         height: Option<u64>,
@@ -166,14 +165,14 @@ impl HttpRpcClient {
         let nonce = random_nonce();
         Ok(muta_types::RawTransaction {
             chain_id: muta_types::Hash::from_hex(chain_id.as_str())?,
-            nonce: nonce,
-            timeout: timeout,
+            nonce,
+            timeout,
             cycles_price: cycles_price.unwrap_or(1),
             cycles_limit: cycles_limit.unwrap_or(1000000),
             request: muta_types::TransactionRequest {
-                service_name: service_name,
-                method: method,
-                payload: payload,
+                service_name,
+                method,
+                payload,
             },
         })
     }

@@ -15,7 +15,7 @@ pub enum WalletError {
 
 pub struct Wallet {
     mnemonic: Mnemonic,
-    seed:     Seed,
+    seed: Seed,
 }
 
 impl Wallet {
