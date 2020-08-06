@@ -21,7 +21,7 @@ use muta_sdk;
 #[tokio::main]
 async fn main() {
     let client = muta_sdk::client::client::HttpRpcClient::default();
-	let block = client.get_block(None).await.unwrap();
+    let block = client.get_block(None).await.unwrap();
     println("{:?}", block);
 }
 ```
