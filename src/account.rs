@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use common_crypto::{
     HashValue, PrivateKey, PublicKey, Secp256k1PrivateKey, Secp256k1PublicKey, Secp256k1Signature,
-    Signature, ToPublicKey,
+    Signature, ToPublicKey, UncompressedPublicKey,
 };
 use muta_protocol::fixed_codec::FixedCodec;
 use muta_protocol::types::{Address, Hash, RawTransaction, SignedTransaction};
@@ -28,8 +28,8 @@ pub struct Account {
 impl Account {
     pub fn new(private_key: Secp256k1PrivateKey) -> Self {
         let public_key = private_key.pub_key();
-        let address =
-            Address::from_hash(Hash::digest(public_key.to_bytes())).expect("should not happen");
+        let address = Address::from_pubkey_bytes(public_key.to_uncompressed_bytes())
+            .expect("should not happen");
         Self {
             private_key,
             public_key,
@@ -95,8 +95,8 @@ mod tests {
             Account::from_hex("1000000000000000000000000000000000000000000000000000000000000000")
                 .unwrap();
         assert_eq!(
-            account.get_address().as_hex(),
-            "0xd17b9e27ef454ce597f3f05a5b5d4dcc96a423f9"
+            account.get_address().to_string(),
+            "muta10vjpnc8wp0grfaalyjr5cyj39t9vdcsuzuz7qp"
         );
     }
 }

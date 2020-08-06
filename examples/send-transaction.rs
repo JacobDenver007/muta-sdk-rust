@@ -6,7 +6,7 @@ async fn main() {
     let my_account = create_account();
     let client = muta_sdk::client::client::HttpRpcClient::default();
     let chain_account = muta_sdk::account::Account::from_hex(
-        "45c56be699dca666191ad3446897e0f480da234da896270202514a0e1a587c3f",
+        "5ec982173d54d830b6789cbbbe43eaa2853a5ff752d1ebc1b266cf9790314f8a",
     )
     .unwrap();
     transfer(&client, &chain_account, &my_account).await;
@@ -31,7 +31,8 @@ async fn transfer(
     from_account: &muta_sdk::account::Account,
     to_account: &muta_sdk::account::Account,
 ) {
-    let to_address = to_account.get_address().as_hex();
+    let from_address = from_account.get_address().to_string();
+    let to_address = to_account.get_address().to_string();
     let payload = format!(
         r#"{{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c","to": "{}","value": 10000000}}"#,
         to_address
@@ -42,6 +43,7 @@ async fn transfer(
             None,
             None,
             None,
+            from_address,
             "asset".to_owned(),
             "transfer".to_owned(),
             payload.to_owned(),
@@ -58,7 +60,7 @@ async fn get_balance(
     client: &muta_sdk::client::client::HttpRpcClient,
     account: &muta_sdk::account::Account,
 ) {
-    let address = account.get_address().as_hex();
+    let address = account.get_address().to_string();
     let payload = format!(
         r#"{{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c", "user": "{}"}}"#,
         address

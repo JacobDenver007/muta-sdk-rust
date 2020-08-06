@@ -41,7 +41,8 @@ There are several mod you may interest on as follows.
 
 ## Development
 
-> To ensure that the test passes, please enable a muta-example chain before the test
+> To ensure that the test passes, please enable a muta-example chain before the test.
+> To start a muta-example chain, please reference [Muta Documentation](https://docs.muta.dev/docs).
 
 ```shell
 git clone https://github.com/nervosnetwork/muta-sdk-rust

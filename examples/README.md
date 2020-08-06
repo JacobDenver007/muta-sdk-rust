@@ -6,19 +6,11 @@ they can auto-complete for you when you try your example code.
 
 ## Requirement
 
-- [Muta example-chain](https://github.com/mkxbl/muta.git)
-
-> This sdk relies on https://github.com/mkxbl/muta.git rev a18ad1e, not master branch, please notice that.
+- [Muta example-chain](https://github.com/nervosnetwork/muta/releases)
 
 ## Start A muta-example Chain
 
-```
-git clone https://github.com/mkxbl/muta.git
-cd muta
-git checkout a18ad1e
-cargo build --release --example muta-chain
-./target/release/examples/muta-chain
-```
+Please reference to [Muta Documentation](https://docs.muta.dev/docs) to start a muta-example chain.
 
 ## Build The SDK
 

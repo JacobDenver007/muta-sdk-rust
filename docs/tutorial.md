@@ -45,7 +45,7 @@ There is a concept called [service](https://docs.muta.dev/#/service_dev) in Muta
 Here is a short demo to show how to query balance
 
 ```rust
-let payload = r#"{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c", "user": "0xf8389d774afdad8755ef8e629e5a154fddc6325a"}"#;
+let payload = r#"{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c", "user": "muta14e0lmgck835vm2dfm0w3ckv6svmez8fdgdl705"}"#;
 let res = client
     .query_service(
         None,
@@ -68,7 +68,7 @@ When we try to modify the service status, such as transfer, we need to send a si
 The following code shows how to create a raw transaction, that used to call the asset service for transfer.
 
 ```rust
-let payload = r#"{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c","to": "0xa55e1261a73116c755291140e427caa0cbb5309e","value": 1}"#;
+let payload = r#"{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c","to": "muta1tdw5mnyk5s3lngz2mcjd2rse4htrnu6679pr23","value": 1}"#;
 
 let raw_transaction = client
     .generate_raw_transaction(
@@ -76,6 +76,7 @@ let raw_transaction = client
         None,
         None,
         None,
+        "muta14e0lmgck835vm2dfm0w3ckv6svmez8fdgdl705".to_owned(),
         "asset".to_owned(),
         "transfer".to_owned(),
         payload.to_owned(),

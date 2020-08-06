@@ -1,4 +1,5 @@
 use std::convert::{TryFrom, TryInto};
+use std::str::FromStr;
 
 use muta_protocol::traits as muta_traits;
 use muta_protocol::types as muta_types;
@@ -15,6 +16,8 @@ pub enum RpcError {
     ParseUint64(#[from] std::num::ParseIntError),
     #[error("parse muta types error")]
     ParseMutaTypes(#[from] muta_protocol::ProtocolError),
+    #[error("parse muta types error")]
+    MutaTypes(#[from] muta_types::TypesError),
     #[error("parse hex error")]
     ParseHex(#[from] hex::FromHexError),
     #[error("convert Int to u32 error")]
@@ -47,9 +50,10 @@ pub struct BlockHeader {
     pub chain_id: Hash,
     pub height: Uint64,
     pub exec_height: Uint64,
-    pub pre_hash: Hash,
+    pub prev_hash: Hash,
     pub timestamp: Uint64,
     pub order_root: MerkleRoot,
+    pub order_signed_transactions_hash: Hash,
     pub confirm_root: Vec<MerkleRoot>,
     pub state_root: MerkleRoot,
     pub receipt_root: Vec<MerkleRoot>,
@@ -63,6 +67,7 @@ pub struct BlockHeader {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SignedTransaction {
+    pub sender: Address,
     pub chain_id: Hash,
     pub cycles_limit: Uint64,
     pub cycles_price: Uint64,
@@ -116,7 +121,7 @@ pub struct Proof {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Validator {
-    pub address: Address,
+    pub pubkey: Bytes,
     pub propose_weight: i32,
     pub vote_weight: i32,
 }
@@ -125,7 +130,7 @@ pub struct Validator {
 #[serde(rename_all = "camelCase")]
 pub struct Event {
     pub service: String,
-    pub topic: String,
+    pub name: String,
     pub data: String,
 }
 
@@ -160,9 +165,12 @@ impl TryFrom<BlockHeader> for muta_types::BlockHeader {
             chain_id: muta_types::Hash::from_hex(&header.chain_id)?,
             height: hex_to_u64(&header.height)?,
             exec_height: hex_to_u64(&header.exec_height)?,
-            pre_hash: muta_types::Hash::from_hex(&header.pre_hash)?,
+            prev_hash: muta_types::Hash::from_hex(&header.prev_hash)?,
             timestamp: hex_to_u64(&header.timestamp)?,
             order_root: muta_types::Hash::from_hex(&header.order_root)?,
+            order_signed_transactions_hash: muta_types::Hash::from_hex(
+                &header.order_signed_transactions_hash,
+            )?,
             confirm_root: header
                 .confirm_root
                 .into_iter()
@@ -179,7 +187,7 @@ impl TryFrom<BlockHeader> for muta_types::BlockHeader {
                 .into_iter()
                 .map(|s| hex_to_u64(&s))
                 .collect::<Result<Vec<_>, _>>()?,
-            proposer: muta_types::Address::from_hex(&header.proposer)?,
+            proposer: muta_types::Address::from_str(&header.proposer)?,
             proof: header.proof.try_into()?,
             validator_version: hex_to_u64(&header.validator_version)?,
             validators: header
@@ -196,7 +204,7 @@ impl TryFrom<Validator> for muta_types::Validator {
 
     fn try_from(validator: Validator) -> Result<Self, Self::Error> {
         Ok(Self {
-            address: muta_types::Address::from_hex(&validator.address)?,
+            pub_key: hex_to_bytes(&validator.pubkey)?,
             propose_weight: validator.propose_weight.try_into()?,
             vote_weight: validator.vote_weight.try_into()?,
         })
@@ -223,24 +231,8 @@ impl TryFrom<Event> for muta_types::Event {
     fn try_from(event: Event) -> Result<Self, Self::Error> {
         Ok(Self {
             service: event.service,
-            topic: event.topic,
+            name: event.name,
             data: event.data,
-        })
-    }
-}
-
-impl TryFrom<BlockHookReceipt> for muta_types::BlockHookReceipt {
-    type Error = RpcError;
-
-    fn try_from(receipt: BlockHookReceipt) -> Result<Self, Self::Error> {
-        Ok(Self {
-            height: hex_to_u64(&receipt.height)?,
-            state_root: muta_types::Hash::from_hex(&receipt.state_root)?,
-            events: receipt
-                .events
-                .into_iter()
-                .map(|s| s.try_into())
-                .collect::<Result<Vec<_>, _>>()?,
         })
     }
 }
@@ -251,6 +243,7 @@ impl TryFrom<SignedTransaction> for muta_types::SignedTransaction {
     fn try_from(tx: SignedTransaction) -> Result<Self, Self::Error> {
         Ok(Self {
             raw: muta_types::RawTransaction {
+                sender: muta_types::Address::from_str(&tx.sender)?,
                 chain_id: muta_types::Hash::from_hex(&tx.chain_id)?,
                 cycles_price: hex_to_u64(&tx.cycles_price)?,
                 cycles_limit: hex_to_u64(&tx.cycles_limit)?,

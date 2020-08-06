@@ -7,6 +7,7 @@ query RpcTransaction($txHash: Hash!) {
       cyclesPrice
       nonce
       timeout
+      sender
       serviceName
       method
       payload
@@ -25,9 +26,10 @@ query RpcBlock($height: Uint64) {
         chainId
         height
         execHeight
-        preHash
+        prevHash
         timestamp
         orderRoot
+        orderSignedTransactionsHash
         confirmRoot
         stateRoot
         receiptRoot
@@ -42,7 +44,7 @@ query RpcBlock($height: Uint64) {
         }
         validatorVersion
         validators {
-          address
+          pubkey
           proposeWeight
           voteWeight
         }
@@ -63,7 +65,7 @@ query RpcReceipt($txHash: Hash!) {
       cyclesUsed
       events {
         service
-        topic
+        name
         data
       }   
       response {
@@ -75,21 +77,6 @@ query RpcReceipt($txHash: Hash!) {
           errorMessage
         }
       }
-    }
-  }
-"#;
-
-pub const GET_BLOCK_HOOK_RECEIPT: &str = "getBlockHookReceipt";
-pub const GET_BLOCK_HOOK_RECEIPT_QUERY: &str = r#"
-query RpcBlockHookReceipt($height: Uint64!) {
-    getBlockHookReceipt(height: $height) {
-      height
-      stateRoot
-      events {
-        service
-        topic
-        data
-      }   
     }
   }
 "#;

@@ -3,15 +3,13 @@ use muta_protocol::types as muta_types;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 use std::convert::TryInto;
+use std::str::FromStr;
 
 use super::request::{
-    GET_BLOCK, GET_BLOCK_HOOK_RECEIPT, GET_BLOCK_HOOK_RECEIPT_QUERY, GET_BLOCK_QUERY, GET_RECEIPT,
-    GET_RECEIPT_QUERY, GET_TRANSACTION, GET_TRANSACTION_QUERY, SEND_TRANSACTION,
-    SEND_TRANSACTION_MUTATION, SERVICE, SERVICE_QUERY,
+    GET_BLOCK, GET_BLOCK_QUERY, GET_RECEIPT, GET_RECEIPT_QUERY, GET_TRANSACTION,
+    GET_TRANSACTION_QUERY, SEND_TRANSACTION, SEND_TRANSACTION_MUTATION, SERVICE, SERVICE_QUERY,
 };
-use super::rpc_types::{
-    Block, BlockHookReceipt, Hash, Receipt, RpcError, ServiceResponse, SignedTransaction,
-};
+use super::rpc_types::{Block, Hash, Receipt, RpcError, ServiceResponse, SignedTransaction};
 use crate::util::{random_nonce, u64_to_hex};
 
 pub struct Config {
@@ -61,7 +59,6 @@ impl HttpRpcClient {
         if let Some(errs) = resp.get("errors") {
             return Err(RpcError::GraphQLError(errs.to_string()));
         }
-
         Ok(serde_json::from_value(
             resp.get_mut("data")
                 .ok_or(RpcError::DataIsNone)?
@@ -110,20 +107,6 @@ impl HttpRpcClient {
         Ok(rpc_receipt.try_into()?)
     }
 
-    pub async fn get_block_hook_receipt(
-        &self,
-        height: u64,
-    ) -> Result<muta_types::BlockHookReceipt, RpcError> {
-        let q = json!({
-            "query": GET_BLOCK_HOOK_RECEIPT_QUERY,
-            "variables": {
-                "height": u64_to_hex(height),
-            },
-        });
-        let rpc_block_hook_receipt: BlockHookReceipt = self.raw(&q, GET_BLOCK_HOOK_RECEIPT).await?;
-        Ok(rpc_block_hook_receipt.try_into()?)
-    }
-
     pub async fn query_service(
         &self,
         height: Option<u64>,
@@ -156,6 +139,7 @@ impl HttpRpcClient {
         timeout_gap: Option<u64>,
         cycles_limit: Option<u64>,
         cycles_price: Option<u64>,
+        sender: String,
         service_name: String,
         method: String,
         payload: String,
@@ -167,6 +151,7 @@ impl HttpRpcClient {
             chain_id: muta_types::Hash::from_hex(chain_id.as_str())?,
             nonce,
             timeout,
+            sender: muta_types::Address::from_str(sender.as_str())?,
             cycles_price: cycles_price.unwrap_or(1),
             cycles_limit: cycles_limit.unwrap_or(1000000),
             request: muta_types::TransactionRequest {
@@ -192,12 +177,13 @@ impl HttpRpcClient {
                     "timeout": u64_to_hex(tx.raw.timeout),
                     "serviceName": tx.raw.request.service_name,
                     "method": tx.raw.request.method,
-                    "payload": tx.raw.request.payload
+                    "payload": tx.raw.request.payload,
+                    "sender": tx.raw.sender.to_string(),
                 },
                 "input_encryption": {
                     "txHash": tx.tx_hash.as_hex(),
-                    "pubkey": "0x".to_owned() + &hex::encode(tx.pubkey),
-                    "signature": "0x".to_owned() + &hex::encode(tx.signature)
+                    "pubkey": "0x".to_owned() + &hex::encode(rlp::encode_list::<Vec<u8>, _>(&[tx.pubkey.to_vec()])),
+                    "signature": "0x".to_owned() + &hex::encode(rlp::encode_list::<Vec<u8>, _>(&[tx.signature.to_vec()]))
                 }
             },
         });
@@ -223,16 +209,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn client_get_block_hook_receipt() {
-        let client = HttpRpcClient::default();
-        let res = client.get_block_hook_receipt(1).await.unwrap();
-        assert_eq!(1, res.height);
-    }
-
-    #[tokio::test]
     async fn client_query_service() {
         let client = HttpRpcClient::default();
-        let payload = r#"{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c", "user": "0xf8389d774afdad8755ef8e629e5a154fddc6325a"}"#;
+        let payload = r#"{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c", "user": "muta14e0lmgck835vm2dfm0w3ckv6svmez8fdgdl705"}"#;
         let res = client
             .query_service(
                 None,
@@ -252,17 +231,16 @@ mod tests {
     async fn client_send_transaction() {
         let client = HttpRpcClient::default();
         let account =
-            Account::from_hex("45c56be699dca666191ad3446897e0f480da234da896270202514a0e1a587c3f")
+            Account::from_hex("5ec982173d54d830b6789cbbbe43eaa2853a5ff752d1ebc1b266cf9790314f8a")
                 .unwrap();
-
-        let payload = r#"{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c","to": "0xa55e1261a73116c755291140e427caa0cbb5309e","value": 1}"#;
-
+        let payload = r#"{"asset_id": "0xf56924db538e77bb5951eb5ff0d02b88983c49c45eea30e8ae3e7234b311436c","to": "muta1tdw5mnyk5s3lngz2mcjd2rse4htrnu6679pr23","value": 1}"#;
         let raw = client
             .generate_raw_transaction(
                 "0xb6a4d7da21443f5e816e8700eea87610e6d769657d6b8ec73028457bf2ca4036".to_owned(),
                 None,
                 None,
                 None,
+                "muta14e0lmgck835vm2dfm0w3ckv6svmez8fdgdl705".to_owned(),
                 "asset".to_owned(),
                 "transfer".to_owned(),
                 payload.to_owned(),
