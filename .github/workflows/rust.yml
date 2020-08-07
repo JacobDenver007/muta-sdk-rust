@@ -23,3 +23,9 @@ jobs:
         run: cargo clippy --verbose --all --all-targets --all-features -- -D warnings -D clippy::clone_on_ref_ptr -D clippy::enum_glob_use
       - name: Fmt
         run: cargo fmt --verbose --all -- --check
+      - name: Docker start muta-chain
+        run: docker run -d --name muta-chain --rm -p 8000:8000 mutadev/muta 
+      - name: Test
+        run: cargo test
+      - name: Docker remove muta-chain
+        run: docker rm -f muta-chain
