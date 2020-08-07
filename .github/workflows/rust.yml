@@ -24,7 +24,7 @@ jobs:
       - name: Fmt
         run: cargo fmt --verbose --all -- --check
       - name: Docker
-        run: docker run -name muta-chain --rm -p 8000:8000 mutadev/muta -d
+        run: docker run --name muta-chain --rm -p 8000:8000 mutadev/muta -d
       - name: Test
         run: cargo test
       - name: Docker rm
