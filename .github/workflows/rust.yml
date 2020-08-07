@@ -28,4 +28,4 @@ jobs:
       - name: Test
         run: cargo test
       - name: Docker rm
-        run: docker rm -rf muta-chain
+        run: docker rm -f muta-chain
